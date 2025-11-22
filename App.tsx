@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { UserState, QuestionType } from './types';
 import { quizQuestions } from './questions';
 
+// --- CONFIGURACIÓN ---
 const LOGO_URL = "https://cdn.myportfolio.com/d435fa58-d32c-4141-8a15-0f2bfccdea41/1ac05fb8-e508-4c03-b550-d2b907caadbd_rw_600.png?h=7572d326e4292f32557ac73606fd0ece";
+
+// ¡IMPORTANTE!: Reemplaza 'TU_CODIGO_AQUI' por el ID que te da Formspree al crear un form nuevo.
+// Ejemplo: const FORMSPREE_FORM_ID = 'xpzognwk';
+const FORMSPREE_FORM_ID: string = 'xqajpkng'; 
 
 // --- SUB-COMPONENTES INTERACTIVOS ---
 
-// Componente para ordenar respuestas (Drag & Drop simulado con botones para mejor compatibilidad móvil)
+// Componente para ordenar respuestas
 const OrderingQuestion = ({ options, onConfirm }: { options: string[], onConfirm: (answer: string) => void }) => {
   const [items, setItems] = useState(options);
 
@@ -59,7 +64,7 @@ const OrderingQuestion = ({ options, onConfirm }: { options: string[], onConfirm
   );
 };
 
-// Componente para Banco de Palabras (Completar la frase)
+// Componente para Banco de Palabras
 const WordBankQuestion = ({ text, options, onConfirm }: { text: string, options: string[], onConfirm: (answer: string) => void }) => {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
@@ -131,6 +136,8 @@ const App: React.FC = () => {
     score: 0,
   });
 
+  const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
   // Handlers
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,10 +188,43 @@ const App: React.FC = () => {
     }, delay);
   };
 
-  const generateEmailLink = () => {
-    const subject = `Examen Final - ${userState.name}`;
-    const body = `Certificado STL\nAlumno: ${userState.name}\nNota: ${userState.score}/${quizQuestions.length}\nToken: ${userState.verificationCode}`;
-    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Lógica de envío a Formspree
+  const handleSubmitResults = async () => {
+    if (FORMSPREE_FORM_ID === 'TU_CODIGO_AQUI') {
+        alert('Error de configuración: El administrador no ha configurado el ID de Formspree en el código.');
+        return;
+    }
+
+    setSendingStatus('sending');
+
+    const data = {
+        student_name: userState.name,
+        student_email: userState.email,
+        final_score: `${userState.score} / ${quizQuestions.length}`,
+        status: (userState.score / quizQuestions.length) * 100 >= 60 ? 'APROBADO' : 'REPROBADO',
+        verification_token: userState.verificationCode,
+        completion_date: userState.completionDate,
+        _subject: `Nuevo Examen Completado: ${userState.name}`, // Asunto del correo para Formspree
+    };
+
+    try {
+        const response = await fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            setSendingStatus('success');
+        } else {
+            setSendingStatus('error');
+        }
+    } catch (error) {
+        console.error("Error sending form", error);
+        setSendingStatus('error');
+    }
   };
 
   // --- VISTAS ---
@@ -298,9 +338,38 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 justify-center pt-8 print:hidden">
-              <a href={generateEmailLink()} className="bg-blue-900 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-800 transition-colors shadow-lg">
-                Enviar Resultados
-              </a>
+              
+              {/* BOTÓN DE ENVÍO AUTOMÁTICO API */}
+              {sendingStatus === 'success' ? (
+                 <button disabled className="bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow-lg cursor-default flex items-center justify-center">
+                    ✓ Enviado Exitosamente
+                 </button>
+              ) : (
+                <button 
+                  onClick={handleSubmitResults} 
+                  disabled={sendingStatus === 'sending'}
+                  className={`px-8 py-3 rounded-full font-bold shadow-lg transition-all flex items-center justify-center min-w-[200px] ${
+                      sendingStatus === 'error' 
+                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                      : 'bg-blue-900 text-white hover:bg-blue-800'
+                  }`}
+                >
+                  {sendingStatus === 'sending' ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Enviando...
+                      </>
+                  ) : sendingStatus === 'error' ? (
+                      'Error - Reintentar'
+                  ) : (
+                      'Enviar Resultados al Profesor'
+                  )}
+                </button>
+              )}
+
               <button onClick={() => window.print()} className="bg-white text-stone-700 border border-stone-300 px-8 py-3 rounded-full font-bold hover:bg-stone-50 transition-colors">
                 Descargar PDF
               </button>
