@@ -4,9 +4,6 @@ import { quizQuestions } from './questions';
 
 // --- CONFIGURACIÓN ---
 const LOGO_URL = "https://cdn.myportfolio.com/d435fa58-d32c-4141-8a15-0f2bfccdea41/1ac05fb8-e508-4c03-b550-d2b907caadbd_rw_600.png?h=7572d326e4292f32557ac73606fd0ece";
-
-// ¡IMPORTANTE!: Reemplaza 'TU_CODIGO_AQUI' por el ID que te da Formspree al crear un form nuevo.
-// Ejemplo: const FORMSPREE_FORM_ID = 'xpzognwk';
 const FORMSPREE_FORM_ID: string = 'xqajpkng'; 
 
 // --- SUB-COMPONENTES INTERACTIVOS ---
@@ -190,21 +187,22 @@ const App: React.FC = () => {
 
   // Lógica de envío a Formspree
   const handleSubmitResults = async () => {
-    if (FORMSPREE_FORM_ID === 'TU_CODIGO_AQUI') {
-        alert('Error de configuración: El administrador no ha configurado el ID de Formspree en el código.');
+    if (!FORMSPREE_FORM_ID || FORMSPREE_FORM_ID === 'TU_CODIGO_AQUI') {
+        alert('Error de configuración: ID de Formspree no válido.');
         return;
     }
 
     setSendingStatus('sending');
 
+    // Usamos 'name' y 'email' estándar para que Formspree detecte el reply-to automáticamente
     const data = {
-        student_name: userState.name,
-        student_email: userState.email,
-        final_score: `${userState.score} / ${quizQuestions.length}`,
+        name: userState.name,
+        email: userState.email,
+        score: `${userState.score} / ${quizQuestions.length}`,
         status: (userState.score / quizQuestions.length) * 100 >= 60 ? 'APROBADO' : 'REPROBADO',
-        verification_token: userState.verificationCode,
-        completion_date: userState.completionDate,
-        _subject: `Nuevo Examen Completado: ${userState.name}`, // Asunto del correo para Formspree
+        token: userState.verificationCode,
+        date: userState.completionDate,
+        _subject: `Examen Final Completado: ${userState.name}`,
     };
 
     try {
@@ -243,7 +241,7 @@ const App: React.FC = () => {
           <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-16 bg-gradient-to-t from-black/90 to-transparent">
             <img src={LOGO_URL} alt="Logo" className="h-16 w-16 object-contain mb-4 bg-white/90 rounded-full p-2 backdrop-blur-sm" />
             <h1 className="text-white text-3xl md:text-5xl font-serif font-bold leading-tight mb-2">
-              Seminario Teológico Latino
+              Latin Theological Seminary
             </h1>
             <p className="text-yellow-500 text-sm uppercase tracking-widest font-bold">Examen Final</p>
           </div>
@@ -304,7 +302,7 @@ const App: React.FC = () => {
           <div className="bg-blue-900 p-8 text-center text-white relative overflow-hidden print:bg-white print:text-black print:border-b print:border-stone-900">
             <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
             <img src={LOGO_URL} alt="Logo" className="h-20 mx-auto mb-4 relative z-10 bg-white rounded-full p-1" />
-            <h1 className="text-2xl md:text-3xl font-serif font-bold relative z-10">Seminario Teológico Latino</h1>
+            <h1 className="text-2xl md:text-3xl font-serif font-bold relative z-10">Latin Theological Seminary</h1>
             <p className="text-blue-200 text-xs uppercase tracking-[0.3em] mt-2 relative z-10 print:text-stone-500">Certificado Oficial de Resultados</p>
           </div>
 
@@ -458,7 +456,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="p-4 text-center text-stone-300 text-[10px] uppercase tracking-widest">
-          Seminario Teológico Latino &copy; 2024
+          Latin Theological Seminary &copy; 2024
         </div>
       </div>
     </div>
