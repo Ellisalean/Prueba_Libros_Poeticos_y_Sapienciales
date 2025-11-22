@@ -202,7 +202,8 @@ const App: React.FC = () => {
         status: (userState.score / quizQuestions.length) * 100 >= 60 ? 'APROBADO' : 'REPROBADO',
         token: userState.verificationCode,
         date: userState.completionDate,
-        _subject: `Examen Final Completado: ${userState.name}`,
+        // Asunto personalizado para identificar la materia en el correo
+        _subject: `Examen Sapienciales: ${userState.name}`,
     };
 
     try {
